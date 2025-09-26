@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { bets, users, odds } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { verifyJwt } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
-    
+
     if (!token) {
       return NextResponse.json({ error: "Token mungon" }, { status: 401 });
     }
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       .from(bets)
       .leftJoin(odds, eq(bets.oddId, odds.id))
       .where(eq(bets.userId, payload.userId))
-      .orderBy(bets.createdAt);
+      .orderBy(desc(bets.createdAt));
 
     return NextResponse.json(userBets);
   } catch (error: any) {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
-    
+
     if (!token) {
       return NextResponse.json({ error: "Token mungon" }, { status: 401 });
     }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     const { oddId, stake } = await req.json();
-    
+
     // Get the odd to calculate potential payout
     const [odd] = await db
       .select()
@@ -88,23 +88,23 @@ export async function POST(req: Request) {
       // Create the bet
       await tx.insert(bets).values({
         userId: payload.userId,
-        oddId,
-        stake,
-        potentialPayout,
+        oddId: oddId,
+        stake: stake.toString(),
+        potentialPayout: potentialPayout.toString(),
       });
 
       // Update user balance
       await tx
         .update(users)
-        .set({ 
-          balance: (parseFloat(user.balance) - stake).toFixed(2) 
+        .set({
+          balance: (parseFloat(user.balance) - stake).toFixed(2)
         })
         .where(eq(users.id, payload.userId));
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Basti u vendos me sukses",
-      potentialPayout 
+      potentialPayout
     }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message ?? "Gabim" }, { status: 500 });
