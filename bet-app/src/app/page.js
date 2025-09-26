@@ -2,7 +2,7 @@ import { formatDateTimeUTC } from "@/lib/utils/format";
 import BetSlip from "@/app/components/BetSlip";
 import AddToSlipButton from "@/app/components/AddToSlipButton";
 
-// Data statike për të shmangur mospërputhje SSR/CSR gjatë hidratimit
+// Data statike me odds IDs për të punuar me API
 const demoMatches = [
   {
     id: "m1",
@@ -11,7 +11,13 @@ const demoMatches = [
     homeTeam: "Arsenal",
     awayTeam: "Chelsea",
     startTime: "2025-12-31T18:00:00.000Z",
-    odds: { homeWin: 1.9, draw: 3.4, awayWin: 3.8, over25: 1.95, under25: 1.85 },
+    odds: [
+      { id: 1, description: "Arsenal fiton", oddValue: 1.9 },
+      { id: 2, description: "Barazim", oddValue: 3.4 },
+      { id: 3, description: "Chelsea fiton", oddValue: 3.8 },
+      { id: 4, description: "Over 2.5 gola", oddValue: 1.95 },
+      { id: 5, description: "Under 2.5 gola", oddValue: 1.85 },
+    ]
   },
   {
     id: "m2",
@@ -20,7 +26,12 @@ const demoMatches = [
     homeTeam: "Real Madrid",
     awayTeam: "Fenerbahçe",
     startTime: "2025-12-31T20:00:00.000Z",
-    odds: { homeWin: 1.6, awayWin: 2.4 },
+    odds: [
+      { id: 6, description: "Real Madrid fiton", oddValue: 1.6 },
+      { id: 7, description: "Fenerbahçe fiton", oddValue: 2.4 },
+      { id: 8, description: "Over 160.5 pikë", oddValue: 1.9 },
+      { id: 9, description: "Under 160.5 pikë", oddValue: 1.9 },
+    ]
   },
 ];
 
@@ -39,34 +50,20 @@ export default function Home() {
                   <p className="text-xs text-neutral-700">{formatDateTimeUTC(m.startTime)}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                {"homeWin" in m.odds && (
-                  <AddToSlipButton selection={{ matchId: m.id, description: `${m.homeTeam} fiton`, market: '1x2', odds: m.odds.homeWin }}>
-                    <span>1 • {m.odds.homeWin}</span>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+                {m.odds.map((odd) => (
+                  <AddToSlipButton 
+                    key={odd.id}
+                    selection={{ 
+                      oddId: odd.id,
+                      matchId: m.id, 
+                      description: odd.description, 
+                      odds: odd.oddValue 
+                    }}
+                  >
+                    <span className="text-sm">{odd.description} • {odd.oddValue}</span>
                   </AddToSlipButton>
-                )}
-                {"draw" in m.odds && (
-                  <AddToSlipButton selection={{ matchId: m.id, description: `Barazim`, market: '1x2', odds: m.odds.draw }}>
-                    <span>X • {m.odds.draw}</span>
-                  </AddToSlipButton>
-                )}
-                {"awayWin" in m.odds && (
-                  <AddToSlipButton selection={{ matchId: m.id, description: `${m.awayTeam} fiton`, market: '1x2', odds: m.odds.awayWin }}>
-                    <span>2 • {m.odds.awayWin}</span>
-                  </AddToSlipButton>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                {"over25" in m.odds && (
-                  <AddToSlipButton selection={{ matchId: m.id, description: `Over 2.5`, market: 'over_under', odds: m.odds.over25 }}>
-                    <span>Over 2.5 • {m.odds.over25}</span>
-                  </AddToSlipButton>
-                )}
-                {"under25" in m.odds && (
-                  <AddToSlipButton selection={{ matchId: m.id, description: `Under 2.5`, market: 'over_under', odds: m.odds.under25 }}>
-                    <span>Under 2.5 • {m.odds.under25}</span>
-                  </AddToSlipButton>
-                )}
+                ))}
               </div>
             </article>
           ))}
